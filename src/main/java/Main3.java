@@ -1,9 +1,7 @@
 import org.apache.spark.ml.Pipeline;
 import org.apache.spark.ml.PipelineModel;
 import org.apache.spark.ml.PipelineStage;
-import org.apache.spark.ml.classification.DecisionTreeClassificationModel;
-import org.apache.spark.ml.classification.DecisionTreeClassifier;
-import org.apache.spark.ml.classification.LogisticRegression;
+import org.apache.spark.ml.classification.*;
 import org.apache.spark.ml.evaluation.MulticlassClassificationEvaluator;
 import org.apache.spark.ml.feature.IndexToString;
 import org.apache.spark.ml.feature.StringIndexer;
@@ -55,27 +53,27 @@ public class Main3 {
                 .setInputCols(new String[]{"Product_Category_1", "Product_Category_2", "Product_Category_3", "Purchase"})
                 .setOutputCol("categories");
 
-        DecisionTreeClassifier dt = new DecisionTreeClassifier()
-                .setMaxDepth(10)
-                .setImpurity("gini")
+        RandomForestClassifier rf = new RandomForestClassifier()
+                .setNumTrees(2)
+                .setMaxDepth(2)
+                .setImpurity("entropy")
                 .setFeaturesCol("categories")
-                .setLabelCol("indexedLabel")
-                .setLabelCol("indexedLabelGender")
-                .setLabelCol("indexedLabelProduct_ID");
+                .setLabelCol("indexedLabel");
 
         Dataset transformed = labelIndexer.transform(trainingData);
         Dataset features = assembler.transform(transformed);
 
-        DecisionTreeClassificationModel modelDebug = dt.train(features);
+        RandomForestClassificationModel modelDebug = rf.train(features);
         System.out.println("Learnt classification tree model:\n");
         System.out.println(modelDebug.toDebugString());
+
         IndexToString labelConverter = new IndexToString()
                 .setInputCol("prediction")
                 .setOutputCol("predictedLabel")
                 .setLabels(labelIndexer.labels());
 
         Pipeline pipeline = new Pipeline()
-                .setStages(new PipelineStage[]{labelIndexer, labelIndexerGender, labelIndexerProduct, assembler, dt, labelConverter});
+                .setStages(new PipelineStage[]{labelIndexer, assembler, rf, labelConverter});
         // Train model.
         PipelineModel model = pipeline.fit(trainingData);
 
