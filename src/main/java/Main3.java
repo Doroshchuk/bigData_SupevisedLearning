@@ -1,6 +1,8 @@
 import org.apache.spark.ml.Pipeline;
 import org.apache.spark.ml.PipelineModel;
 import org.apache.spark.ml.PipelineStage;
+import org.apache.spark.ml.classification.DecisionTreeClassificationModel;
+import org.apache.spark.ml.classification.DecisionTreeClassifier;
 import org.apache.spark.ml.classification.LogisticRegression;
 import org.apache.spark.ml.evaluation.MulticlassClassificationEvaluator;
 import org.apache.spark.ml.feature.IndexToString;
@@ -53,23 +55,27 @@ public class Main3 {
                 .setInputCols(new String[]{"Product_Category_1", "Product_Category_2", "Product_Category_3", "Purchase"})
                 .setOutputCol("categories");
 
-        LogisticRegression lr = new LogisticRegression()
-                .setMaxIter(20)
-                .setRegParam(0.3)
-                .setElasticNetParam(0.95)
+        DecisionTreeClassifier dt = new DecisionTreeClassifier()
+                .setMaxDepth(10)
+                .setImpurity("gini")
                 .setFeaturesCol("categories")
                 .setLabelCol("indexedLabel")
                 .setLabelCol("indexedLabelGender")
                 .setLabelCol("indexedLabelProduct_ID");
 
+        Dataset transformed = labelIndexer.transform(trainingData);
+        Dataset features = assembler.transform(transformed);
+
+        DecisionTreeClassificationModel modelDebug = dt.train(features);
+        System.out.println("Learnt classification tree model:\n");
+        System.out.println(modelDebug.toDebugString());
         IndexToString labelConverter = new IndexToString()
                 .setInputCol("prediction")
                 .setOutputCol("predictedLabel")
                 .setLabels(labelIndexer.labels());
 
         Pipeline pipeline = new Pipeline()
-                .setStages(new PipelineStage[]{labelIndexer, labelIndexerGender, labelIndexerProduct, assembler, lr, labelConverter});
-
+                .setStages(new PipelineStage[]{labelIndexer, labelIndexerGender, labelIndexerProduct, assembler, dt, labelConverter});
         // Train model.
         PipelineModel model = pipeline.fit(trainingData);
 
@@ -77,7 +83,7 @@ public class Main3 {
         Dataset<Row> predictions = model.transform(testData);
 
         // Select example rows to display.
-        predictions.select("predictedLabel", "Age", "Gender", "Product_ID",  "categories").show(1115);
+        predictions.select("predictedLabel", "Age", "Gender", "Product_ID", "categories").show(1115);
 
         // Select (prediction, true label) and compute test error.
         MulticlassClassificationEvaluator evaluator = new MulticlassClassificationEvaluator()
