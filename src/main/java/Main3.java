@@ -57,7 +57,7 @@ public class Main3 {
 
         DecisionTreeClassifier dt = new DecisionTreeClassifier()
                 .setMaxDepth(15)
-                .setImpurity("entropy")
+                .setImpurity("entropy") // or "gini"
                 .setFeaturesCol("categories")
                 .setLabelCol("indexedLabel");
 //                .setLabelCol("indexedLabelGender")
