@@ -56,12 +56,12 @@ public class Main3 {
                 .setOutputCol("categories");
 
         DecisionTreeClassifier dt = new DecisionTreeClassifier()
-                .setMaxDepth(10)
-                .setImpurity("gini")
+                .setMaxDepth(15)
+                .setImpurity("entropy")
                 .setFeaturesCol("categories")
-                .setLabelCol("indexedLabel")
-                .setLabelCol("indexedLabelGender")
-                .setLabelCol("indexedLabelProduct_ID");
+                .setLabelCol("indexedLabel");
+//                .setLabelCol("indexedLabelGender")
+//                .setLabelCol("indexedLabelProduct_ID");
 
         Dataset transformed = labelIndexer.transform(trainingData);
         Dataset features = assembler.transform(transformed);
